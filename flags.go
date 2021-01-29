@@ -2,9 +2,16 @@ package importas
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"strings"
 )
+
+func flags() flag.FlagSet {
+	fs := flag.FlagSet{}
+	fs.Var(stringMap(config.RequiredAlias), "alias", "required import alias in form path:alias")
+	return fs
+}
 
 type stringMap map[string]string
 
