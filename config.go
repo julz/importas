@@ -1,6 +1,7 @@
 package importas
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 )
@@ -63,5 +64,5 @@ func (r *Rule) aliasFor(path string) (string, error) {
 		return r.Regexp.ReplaceAllString(str, r.Alias), nil
 	}
 
-	return "", fmt.Errorf("mismatch rule")
+	return "", errors.New("mismatch rule")
 }
