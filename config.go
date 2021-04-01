@@ -13,7 +13,7 @@ type Config struct {
 func (c *Config) CompileRegexp() error {
 	rules := make([]*Rule, 0, len(c.RequiredAlias))
 	for path, alias := range c.RequiredAlias {
-		reg, err := regexp.Compile(path)
+		reg, err := regexp.Compile(fmt.Sprintf("^%s$", path))
 		if err != nil {
 			return err
 		}
