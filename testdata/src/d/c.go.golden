@@ -1,0 +1,11 @@
+package c
+
+import (
+	autoscalingv1alpha1 "knative.dev/serving/pkg/apis/autoscaling/v1alpha1" // want `import "knative.dev/serving/pkg/apis/autoscaling/v1alpha1" imported as "v1alpha1" but must be "autoscalingv1alpha1" according to config`
+	servingv1 "knative.dev/serving/pkg/apis/serving/v1"                     // want `import "knative.dev/serving/pkg/apis/serving/v1" imported as "v1" but must be "servingv1" according to config`
+)
+
+func foo() {
+	autoscalingv1alpha1.Resource("")
+	servingv1.Resource("")
+}

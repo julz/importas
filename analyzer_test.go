@@ -44,7 +44,7 @@ func TestAnalyzer(t *testing.T) {
 		},
 		{
 			desc: "regexp",
-			pkg:  "c",
+			pkg:  "d",
 			aliases: stringMap{
 				"knative.dev/serving/pkg/apis/(\\w+)/(v[\\w\\d])": "$1$2",
 			},
