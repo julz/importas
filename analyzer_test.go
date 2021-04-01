@@ -46,7 +46,7 @@ func TestAnalyzer(t *testing.T) {
 			desc: "regexp",
 			pkg:  "d",
 			aliases: stringMap{
-				"knative.dev/serving/pkg/apis/(\\w+)/(v[\\w\\d])": "$1$2",
+				"knative.dev/serving/pkg/apis/(\\w+)/(v[\\w\\d]+)": "$1$2",
 			},
 		},
 	}
@@ -54,7 +54,6 @@ func TestAnalyzer(t *testing.T) {
 	for _, test := range testCases {
 		test := test
 		t.Run(test.desc, func(t *testing.T) {
-			t.Parallel()
 
 			dir := filepath.Join(testdata, "src", test.pkg)
 
