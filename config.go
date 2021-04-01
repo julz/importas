@@ -28,7 +28,7 @@ func (c *Config) CompileRegexp() error {
 	return nil
 }
 
-func (c Config) findRule(path string) *Rule {
+func (c *Config) findRule(path string) *Rule {
 	for _, rule := range c.Rules {
 		if rule.Regexp.MatchString(path) {
 			return rule
@@ -38,7 +38,7 @@ func (c Config) findRule(path string) *Rule {
 	return nil
 }
 
-func (c Config) AliasFor(path string) (string, bool) {
+func (c *Config) AliasFor(path string) (string, bool) {
 	rule := c.findRule(path)
 	if rule == nil {
 		return "", false
