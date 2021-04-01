@@ -12,10 +12,6 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-type Config struct {
-	RequiredAlias map[string]string // path -> alias.
-}
-
 var Analyzer = &analysis.Analyzer{
 	Name: "importas",
 	Doc:  "Enforces consistent import aliases",
@@ -26,7 +22,7 @@ var Analyzer = &analysis.Analyzer{
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
 }
 
-var config = Config{
+var config = &Config{
 	RequiredAlias: make(map[string]string),
 }
 
@@ -34,7 +30,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	return runWithConfig(config, pass)
 }
 
-func runWithConfig(config Config, pass *analysis.Pass) (interface{}, error) {
+func runWithConfig(config *Config, pass *analysis.Pass) (interface{}, error) {
+	if err := config.CompileRegexp(); err != nil {
+		return nil, err
+	}
+
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	inspect.Preorder([]ast.Node{(*ast.ImportSpec)(nil)}, func(n ast.Node) {
 		visitImportSpecNode(n.(*ast.ImportSpec), pass)
@@ -62,7 +62,7 @@ func visitImportSpecNode(node *ast.ImportSpec, pass *analysis.Pass) {
 		pass.Reportf(node.Pos(), "import not quoted")
 	}
 
-	if required, exists := config.RequiredAlias[path]; exists && required != alias {
+	if required, exists := config.AliasFor(path); exists && required != alias {
 		pass.Report(analysis.Diagnostic{
 			Pos:     node.Pos(),
 			End:     node.End(),
