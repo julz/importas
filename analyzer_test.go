@@ -42,6 +42,13 @@ func TestAnalyzer(t *testing.T) {
 				"knative.dev/serving/pkg/apis/serving/v1":           "servingv1",
 			},
 		},
+		{
+			desc: "regexp",
+			pkg:  "d",
+			aliases: stringMap{
+				"knative.dev/serving/pkg/apis/(\\w+)/(v[\\w\\d]+)": "$1$2",
+			},
+		},
 	}
 
 	for _, test := range testCases {
