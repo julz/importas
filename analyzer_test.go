@@ -24,6 +24,7 @@ func TestAnalyzer(t *testing.T) {
 			aliases: stringMap{
 				"fmt": "fff",
 				"os":  "stdos",
+				"io":  "iio",
 			},
 		},
 		{
