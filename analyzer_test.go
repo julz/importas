@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"golang.org/x/tools/go/analysis/analysistest"
@@ -14,9 +15,10 @@ func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
 
 	testCases := []struct {
-		desc    string
-		pkg     string
-		aliases stringMap
+		desc       string
+		pkg        string
+		aliases    stringMap
+		strictMode bool
 	}{
 		{
 			desc: "Invalid imports",
@@ -50,6 +52,16 @@ func TestAnalyzer(t *testing.T) {
 				"knative.dev/serving/pkg/apis/(\\w+)/(v[\\w\\d]+)": "$1$2",
 			},
 		},
+		{
+			desc: "strict mode",
+			pkg:  "e",
+			aliases: stringMap{
+				"fmt": "fff",
+				"os":  "stdos",
+				"io":  "iio",
+			},
+			strictMode: true,
+		},
 	}
 
 	for _, test := range testCases {
@@ -80,6 +92,11 @@ func TestAnalyzer(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+			}
+
+			strictFlg := a.Flags.Lookup("strict")
+			if err := strictFlg.Value.Set(strconv.FormatBool(test.strictMode)); err != nil {
+				t.Fatal(err)
 			}
 
 			analysistest.RunWithSuggestedFixes(t, testdata, Analyzer, test.pkg)
