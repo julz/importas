@@ -44,6 +44,10 @@ func runWithConfig(config *Config, pass *analysis.Pass) (interface{}, error) {
 }
 
 func visitImportSpecNode(node *ast.ImportSpec, pass *analysis.Pass) {
+	if !config.StrictMode && node.Name == nil {
+		return
+	}
+
 	var alias string
 	if node.Name == nil {
 		alias = ""

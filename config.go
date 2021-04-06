@@ -9,6 +9,7 @@ import (
 type Config struct {
 	RequiredAlias map[string]string
 	Rules         []*Rule
+	StrictMode    bool
 }
 
 func (c *Config) CompileRegexp() error {
