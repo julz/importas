@@ -19,7 +19,7 @@ func TestAnalyzer(t *testing.T) {
 		aliases stringMap
 	}{
 		{
-			desc: "Valid imports",
+			desc: "Invalid imports",
 			pkg:  "a",
 			aliases: stringMap{
 				"fmt": "fff",
@@ -28,7 +28,7 @@ func TestAnalyzer(t *testing.T) {
 			},
 		},
 		{
-			desc: "Invalid imports",
+			desc: "Valid imports",
 			pkg:  "b",
 			aliases: stringMap{
 				"fmt": "fff",
