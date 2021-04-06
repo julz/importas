@@ -44,11 +44,13 @@ func runWithConfig(config *Config, pass *analysis.Pass) (interface{}, error) {
 }
 
 func visitImportSpecNode(node *ast.ImportSpec, pass *analysis.Pass) {
+	var alias string
 	if node.Name == nil {
-		return // not aliased at all, ignore. (Maybe add strict mode for this?).
+		alias = ""
+	} else {
+		alias = node.Name.String()
 	}
 
-	alias := node.Name.String()
 	if alias == "." {
 		return // Dot aliases are generally used in tests, so ignore.
 	}
@@ -63,10 +65,17 @@ func visitImportSpecNode(node *ast.ImportSpec, pass *analysis.Pass) {
 	}
 
 	if required, exists := config.AliasFor(path); exists && required != alias {
+		var message string
+		if alias == "" {
+			message = fmt.Sprintf("import %q imported without alias but must be with alias %q according to config", path, required)
+		} else {
+			message = fmt.Sprintf("import %q imported as %q but must be %q according to config", path, alias, required)
+		}
+
 		pass.Report(analysis.Diagnostic{
 			Pos:     node.Pos(),
 			End:     node.End(),
-			Message: fmt.Sprintf("import %q imported as %q but must be %q according to config", path, alias, required),
+			Message: message,
 			SuggestedFixes: []analysis.SuggestedFix{{
 				Message:   "Use correct alias",
 				TextEdits: findEdits(node, pass.TypesInfo.Uses, path, alias, required),
@@ -96,13 +105,11 @@ func findEdits(node ast.Node, uses map[*ast.Ident]types.Object, importPath, orig
 			continue
 		}
 
-		if original == pkgName.Name() {
-			result = append(result, analysis.TextEdit{
-				Pos:     use.Pos(),
-				End:     use.End(),
-				NewText: []byte(required),
-			})
-		}
+		result = append(result, analysis.TextEdit{
+			Pos:     use.Pos(),
+			End:     use.End(),
+			NewText: []byte(required),
+		})
 	}
 
 	return result
