@@ -19,6 +19,18 @@ importas \
   ./...
 ~~~~
 
+### Strict mode
+
+By default, importas let non-aliased import, even through the package is specified by `-alias` flag.
+With '-strict' option, importas do not allow this.
+
+~~~~
+importas -strict \
+  -alias knative.dev/serving/pkg/apis/autoscaling/v1alpha1:autoscalingv1alpha1 \
+  -alias knative.dev/serving/pkg/apis/serving/v1:servingv1 \
+  ./...
+~~~~
+
 ### Use regular expression
 
 You can specify the package path by regular expression, and alias by regular expression replacement syntax like following snippet.
