@@ -12,18 +12,18 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+var config = &Config{
+	RequiredAlias: make(map[string]string),
+}
+
 var Analyzer = &analysis.Analyzer{
 	Name: "importas",
 	Doc:  "Enforces consistent import aliases",
 	Run:  run,
 
-	Flags: flags(),
+	Flags: flags(config),
 
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
-}
-
-var config = &Config{
-	RequiredAlias: make(map[string]string),
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
@@ -37,13 +37,13 @@ func runWithConfig(config *Config, pass *analysis.Pass) (interface{}, error) {
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	inspect.Preorder([]ast.Node{(*ast.ImportSpec)(nil)}, func(n ast.Node) {
-		visitImportSpecNode(n.(*ast.ImportSpec), pass)
+		visitImportSpecNode(config, n.(*ast.ImportSpec), pass)
 	})
 
 	return nil, nil
 }
 
-func visitImportSpecNode(node *ast.ImportSpec, pass *analysis.Pass) {
+func visitImportSpecNode(config *Config, node *ast.ImportSpec, pass *analysis.Pass) {
 	if !config.StrictMode && node.Name == nil {
 		return
 	}

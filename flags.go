@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func flags() flag.FlagSet {
+func flags(config *Config) flag.FlagSet {
 	fs := flag.FlagSet{}
 	fs.Var(stringMap(config.RequiredAlias), "alias", "required import alias in form path:alias")
 	fs.BoolVar(&config.StrictMode, "strict", false, "do not allow without using that alias")

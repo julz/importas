@@ -8,7 +8,9 @@ import (
 	"strconv"
 	"testing"
 
+	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/analysistest"
+	"golang.org/x/tools/go/analysis/passes/inspect"
 )
 
 func TestAnalyzer(t *testing.T) {
@@ -84,7 +86,17 @@ func TestAnalyzer(t *testing.T) {
 				}
 			}
 
-			a := Analyzer
+			cnf := Config{
+				RequiredAlias: make(map[string]string),
+			}
+			flgs := flags(&cnf)
+			a := &analysis.Analyzer{
+				Flags: flgs,
+				Run: func(pass *analysis.Pass) (interface{}, error) {
+					return runWithConfig(&cnf, pass)
+				},
+				Requires: []*analysis.Analyzer{inspect.Analyzer},
+			}
 
 			flg := a.Flags.Lookup("alias")
 			for k, v := range test.aliases {
@@ -99,7 +111,7 @@ func TestAnalyzer(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			analysistest.RunWithSuggestedFixes(t, testdata, Analyzer, test.pkg)
+			analysistest.RunWithSuggestedFixes(t, testdata, a, test.pkg)
 		})
 	}
 }
