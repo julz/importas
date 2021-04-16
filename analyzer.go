@@ -48,10 +48,8 @@ func visitImportSpecNode(config *Config, node *ast.ImportSpec, pass *analysis.Pa
 		return
 	}
 
-	var alias string
-	if node.Name == nil {
-		alias = ""
-	} else {
+	alias := ""
+	if node.Name != nil {
 		alias = node.Name.String()
 	}
 
