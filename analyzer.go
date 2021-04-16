@@ -69,11 +69,9 @@ func visitImportSpecNode(config *Config, node *ast.ImportSpec, pass *analysis.Pa
 	}
 
 	if required, exists := config.AliasFor(path); exists && required != alias {
-		var message string
+		message := fmt.Sprintf("import %q imported as %q but must be %q according to config", path, alias, required)
 		if alias == "" {
 			message = fmt.Sprintf("import %q imported without alias but must be with alias %q according to config", path, required)
-		} else {
-			message = fmt.Sprintf("import %q imported as %q but must be %q according to config", path, alias, required)
 		}
 
 		pass.Report(analysis.Diagnostic{

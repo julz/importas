@@ -21,8 +21,8 @@ importas \
 
 ### Strict mode
 
-By default, importas let non-aliased import, even through the package is specified by `-alias` flag.
-With '-strict' option, importas do not allow this.
+By default, importas allows non-aliased imports, even when the package is specified by `-alias` flag.
+With '-strict' option, importas does not allow this.
 
 ~~~~
 importas -strict \
