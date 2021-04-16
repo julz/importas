@@ -17,10 +17,10 @@ func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
 
 	testCases := []struct {
-		desc       string
-		pkg        string
-		aliases    stringMap
-		strictMode bool
+		desc              string
+		pkg               string
+		aliases           stringMap
+		disallowUnaliased bool
 	}{
 		{
 			desc: "Invalid imports",
@@ -55,14 +55,14 @@ func TestAnalyzer(t *testing.T) {
 			},
 		},
 		{
-			desc: "strict mode",
+			desc: "disallow unaliased mode",
 			pkg:  "e",
 			aliases: stringMap{
 				"fmt": "fff",
 				"os":  "stdos",
 				"io":  "iio",
 			},
-			strictMode: true,
+			disallowUnaliased: true,
 		},
 	}
 
@@ -106,8 +106,8 @@ func TestAnalyzer(t *testing.T) {
 				}
 			}
 
-			strictFlg := a.Flags.Lookup("strict")
-			if err := strictFlg.Value.Set(strconv.FormatBool(test.strictMode)); err != nil {
+			noUnaliasedFlg := a.Flags.Lookup("no-unaliased")
+			if err := noUnaliasedFlg.Value.Set(strconv.FormatBool(test.disallowUnaliased)); err != nil {
 				t.Fatal(err)
 			}
 

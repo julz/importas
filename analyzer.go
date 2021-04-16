@@ -44,7 +44,7 @@ func runWithConfig(config *Config, pass *analysis.Pass) (interface{}, error) {
 }
 
 func visitImportSpecNode(config *Config, node *ast.ImportSpec, pass *analysis.Pass) {
-	if !config.StrictMode && node.Name == nil {
+	if !config.DisallowUnaliased && node.Name == nil {
 		return
 	}
 

@@ -19,13 +19,13 @@ importas \
   ./...
 ~~~~
 
-### Strict mode
+### `-no-unaliased` option
 
 By default, importas allows non-aliased imports, even when the package is specified by `-alias` flag.
-With '-strict' option, importas does not allow this.
+With `-no-unaliased` option, importas does not allow this.
 
 ~~~~
-importas -strict \
+importas -no-unaliased \
   -alias knative.dev/serving/pkg/apis/autoscaling/v1alpha1:autoscalingv1alpha1 \
   -alias knative.dev/serving/pkg/apis/serving/v1:servingv1 \
   ./...
