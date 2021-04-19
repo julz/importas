@@ -5,29 +5,34 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"testing"
 
+	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/analysistest"
+	"golang.org/x/tools/go/analysis/passes/inspect"
 )
 
 func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
 
 	testCases := []struct {
-		desc    string
-		pkg     string
-		aliases stringMap
+		desc              string
+		pkg               string
+		aliases           stringMap
+		disallowUnaliased bool
 	}{
 		{
-			desc: "Valid imports",
+			desc: "Invalid imports",
 			pkg:  "a",
 			aliases: stringMap{
 				"fmt": "fff",
 				"os":  "stdos",
+				"io":  "iio",
 			},
 		},
 		{
-			desc: "Invalid imports",
+			desc: "Valid imports",
 			pkg:  "b",
 			aliases: stringMap{
 				"fmt": "fff",
@@ -48,6 +53,16 @@ func TestAnalyzer(t *testing.T) {
 			aliases: stringMap{
 				"knative.dev/serving/pkg/apis/(\\w+)/(v[\\w\\d]+)": "$1$2",
 			},
+		},
+		{
+			desc: "disallow unaliased mode",
+			pkg:  "e",
+			aliases: stringMap{
+				"fmt": "fff",
+				"os":  "stdos",
+				"io":  "iio",
+			},
+			disallowUnaliased: true,
 		},
 	}
 
@@ -71,7 +86,17 @@ func TestAnalyzer(t *testing.T) {
 				}
 			}
 
-			a := Analyzer
+			cnf := Config{
+				RequiredAlias: make(map[string]string),
+			}
+			flgs := flags(&cnf)
+			a := &analysis.Analyzer{
+				Flags: flgs,
+				Run: func(pass *analysis.Pass) (interface{}, error) {
+					return runWithConfig(&cnf, pass)
+				},
+				Requires: []*analysis.Analyzer{inspect.Analyzer},
+			}
 
 			flg := a.Flags.Lookup("alias")
 			for k, v := range test.aliases {
@@ -81,7 +106,12 @@ func TestAnalyzer(t *testing.T) {
 				}
 			}
 
-			analysistest.RunWithSuggestedFixes(t, testdata, Analyzer, test.pkg)
+			noUnaliasedFlg := a.Flags.Lookup("no-unaliased")
+			if err := noUnaliasedFlg.Value.Set(strconv.FormatBool(test.disallowUnaliased)); err != nil {
+				t.Fatal(err)
+			}
+
+			analysistest.RunWithSuggestedFixes(t, testdata, a, test.pkg)
 		})
 	}
 }
