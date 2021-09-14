@@ -17,10 +17,11 @@ func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
 
 	testCases := []struct {
-		desc              string
-		pkg               string
-		aliases           stringMap
-		disallowUnaliased bool
+		desc                 string
+		pkg                  string
+		aliases              stringMap
+		disallowUnaliased    bool
+		disallowExtraAliases bool
 	}{
 		{
 			desc: "Invalid imports",
@@ -63,6 +64,11 @@ func TestAnalyzer(t *testing.T) {
 				"io":  "iio",
 			},
 			disallowUnaliased: true,
+		},
+		{
+			desc:                 "disallow extra alias mode",
+			pkg:                  "f",
+			disallowExtraAliases: true,
 		},
 	}
 
@@ -108,6 +114,11 @@ func TestAnalyzer(t *testing.T) {
 
 			noUnaliasedFlg := a.Flags.Lookup("no-unaliased")
 			if err := noUnaliasedFlg.Value.Set(strconv.FormatBool(test.disallowUnaliased)); err != nil {
+				t.Fatal(err)
+			}
+
+			noExtraAlisesFlg := a.Flags.Lookup("no-extra-aliases")
+			if err := noExtraAlisesFlg.Value.Set(strconv.FormatBool(test.disallowExtraAliases)); err != nil {
 				t.Fatal(err)
 			}
 
