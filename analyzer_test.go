@@ -13,6 +13,32 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 )
 
+func makeAnalyzer() *analysis.Analyzer {
+	cnf := Config{
+		RequiredAlias: make(map[string]string),
+	}
+	return &analysis.Analyzer{
+		Flags: flags(&cnf),
+		Run: func(pass *analysis.Pass) (interface{}, error) {
+			return runWithConfig(&cnf, pass)
+		},
+		Requires: []*analysis.Analyzer{inspect.Analyzer},
+	}
+}
+
+func TestIncorrectFlags(t *testing.T) {
+	assertWrongAliasErr := func(msg string, err error) {
+		if err == nil || err.Error() != errWrongAlias.Error() {
+			t.Errorf("Wrong error for invalid usage[%q]: %v", msg, err)
+		}
+	}
+	a := makeAnalyzer()
+	flg := a.Flags.Lookup("alias")
+	assertWrongAliasErr("empty flag", flg.Value.Set(""))
+	assertWrongAliasErr("white space only", flg.Value.Set("   "))
+	assertWrongAliasErr("no colons", flg.Value.Set("no colons"))
+}
+
 func TestAnalyzer(t *testing.T) {
 	testdata := analysistest.TestData()
 
@@ -70,6 +96,13 @@ func TestAnalyzer(t *testing.T) {
 			pkg:                  "f",
 			disallowExtraAliases: true,
 		},
+		{
+			desc: "regexp with non capturing groups",
+			pkg:  "g",
+			aliases: stringMap{
+				"knative.dev/serving/pkg/(?:apis/)?(\\w+)(?:/v[\\w\\d]+)?": "k$1",
+			},
+		},
 	}
 
 	for _, test := range testCases {
@@ -91,19 +124,7 @@ func TestAnalyzer(t *testing.T) {
 					t.Fatal(err, string(output))
 				}
 			}
-
-			cnf := Config{
-				RequiredAlias: make(map[string]string),
-			}
-			flgs := flags(&cnf)
-			a := &analysis.Analyzer{
-				Flags: flgs,
-				Run: func(pass *analysis.Pass) (interface{}, error) {
-					return runWithConfig(&cnf, pass)
-				},
-				Requires: []*analysis.Analyzer{inspect.Analyzer},
-			}
-
+			a := makeAnalyzer()
 			flg := a.Flags.Lookup("alias")
 			for k, v := range test.aliases {
 				err := flg.Value.Set(fmt.Sprintf("%s:%s", k, v))
@@ -117,8 +138,8 @@ func TestAnalyzer(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			noExtraAlisesFlg := a.Flags.Lookup("no-extra-aliases")
-			if err := noExtraAlisesFlg.Value.Set(strconv.FormatBool(test.disallowExtraAliases)); err != nil {
+			noExtraAliasesFlg := a.Flags.Lookup("no-extra-aliases")
+			if err := noExtraAliasesFlg.Value.Set(strconv.FormatBool(test.disallowExtraAliases)); err != nil {
 				t.Fatal(err)
 			}
 

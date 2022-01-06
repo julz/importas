@@ -1,4 +1,4 @@
-package c
+package d
 
 import (
 	v1alpha1 "knative.dev/serving/pkg/apis/autoscaling/v1alpha1" // want `import "knative.dev/serving/pkg/apis/autoscaling/v1alpha1" imported as "v1alpha1" but must be "autoscalingv1alpha1" according to config`
