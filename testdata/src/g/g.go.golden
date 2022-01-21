@@ -1,0 +1,10 @@
+package g
+
+import (
+	kserving "knative.dev/serving/pkg/apis/serving/v1" // want `import "knative.dev/serving/pkg/apis/serving/v1" imported as "v1" but must be "kserving" according to config`
+	kqueue "knative.dev/serving/pkg/queue"             // want `import "knative.dev/serving/pkg/queue" imported as "knative1" but must be "kqueue" according to config`
+)
+
+func foo() {
+	kserving.Resource(kqueue.Name)
+}

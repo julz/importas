@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var errWrongAlias = errors.New("import flag must be of form path:alias")
+
 func flags(config *Config) flag.FlagSet {
 	fs := flag.FlagSet{}
 	fs.Var(stringMap(config.RequiredAlias), "alias", "required import alias in form path:alias")
@@ -18,12 +20,11 @@ func flags(config *Config) flag.FlagSet {
 type stringMap map[string]string
 
 func (v stringMap) Set(val string) error {
-	spl := strings.SplitN(val, ":", 2)
-	if len(spl) != 2 {
-		return errors.New("import flag must be of form path:alias")
+	lastColon := strings.LastIndex(val, ":")
+	if lastColon <= 1 {
+		return errWrongAlias
 	}
-
-	v[spl[0]] = spl[1]
+	v[val[:lastColon]] = val[lastColon+1:]
 	return nil
 }
 
