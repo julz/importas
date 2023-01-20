@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sync"
 )
 
 type Config struct {
@@ -11,10 +12,23 @@ type Config struct {
 	Rules                []*Rule
 	DisallowUnaliased    bool
 	DisallowExtraAliases bool
+	muRules              sync.RWMutex
 }
 
 func (c *Config) CompileRegexp() error {
-	rules := make([]*Rule, 0, len(c.RequiredAlias))
+	c.muRules.RLock()
+	rules := c.Rules
+	c.muRules.RUnlock()
+	if rules != nil {
+		return nil
+	}
+	c.muRules.Lock()
+	defer c.muRules.Unlock()
+	// Check if another process got here first.
+	if c.Rules != nil {
+		return nil
+	}
+	rules = make([]*Rule, 0, len(c.RequiredAlias))
 	for path, alias := range c.RequiredAlias {
 		reg, err := regexp.Compile(fmt.Sprintf("^%s$", path))
 		if err != nil {
@@ -32,6 +46,8 @@ func (c *Config) CompileRegexp() error {
 }
 
 func (c *Config) findRule(path string) *Rule {
+	c.muRules.RLock()
+	defer c.muRules.RUnlock()
 	for _, rule := range c.Rules {
 		if rule.Regexp.MatchString(path) {
 			return rule

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"testing"
 
 	"golang.org/x/tools/go/analysis"
@@ -37,6 +38,58 @@ func TestIncorrectFlags(t *testing.T) {
 	assertWrongAliasErr("empty flag", flg.Value.Set(""))
 	assertWrongAliasErr("white space only", flg.Value.Set("   "))
 	assertWrongAliasErr("no colons", flg.Value.Set("no colons"))
+}
+
+func TestConcurrency(t *testing.T) {
+	aliases := stringMap{
+		"fmt": "fff",
+		"os":  "stdos",
+	}
+	testdata := analysistest.TestData()
+	dir := filepath.Join(testdata, "src", "b")
+
+	if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+		cmd := exec.Command("go", "mod", "vendor")
+		cmd.Dir = dir
+
+		t.Cleanup(func() {
+			_ = os.RemoveAll(filepath.Join(testdata, "src", "b", "vendor"))
+		})
+
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatal(err, string(output))
+		}
+	}
+	a := makeAnalyzer()
+	flg := a.Flags.Lookup("alias")
+	for k, v := range aliases {
+		err := flg.Value.Set(fmt.Sprintf("%s:%s", k, v))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	noUnaliasedFlg := a.Flags.Lookup("no-unaliased")
+	if err := noUnaliasedFlg.Value.Set("false"); err != nil {
+		t.Fatal(err)
+	}
+
+	noExtraAliasesFlg := a.Flags.Lookup("no-extra-aliases")
+	if err := noExtraAliasesFlg.Value.Set("false"); err != nil {
+		t.Fatal(err)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		analysistest.RunWithSuggestedFixes(t, testdata, a, "b")
+	}()
+	go func() {
+		defer wg.Done()
+		analysistest.RunWithSuggestedFixes(t, testdata, a, "b")
+	}()
+	wg.Wait()
 }
 
 func TestAnalyzer(t *testing.T) {
