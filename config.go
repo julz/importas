@@ -12,23 +12,16 @@ type Config struct {
 	Rules                []*Rule
 	DisallowUnaliased    bool
 	DisallowExtraAliases bool
-	muRules              sync.RWMutex
+	muRules              sync.Mutex
 }
 
 func (c *Config) CompileRegexp() error {
-	c.muRules.RLock()
-	rules := c.Rules
-	c.muRules.RUnlock()
-	if rules != nil {
-		return nil
-	}
 	c.muRules.Lock()
 	defer c.muRules.Unlock()
-	// Check if another process got here first.
 	if c.Rules != nil {
 		return nil
 	}
-	rules = make([]*Rule, 0, len(c.RequiredAlias))
+	rules := make([]*Rule, 0, len(c.RequiredAlias))
 	for path, alias := range c.RequiredAlias {
 		reg, err := regexp.Compile(fmt.Sprintf("^%s$", path))
 		if err != nil {
@@ -40,15 +33,15 @@ func (c *Config) CompileRegexp() error {
 			Alias:  alias,
 		})
 	}
-
 	c.Rules = rules
 	return nil
 }
 
 func (c *Config) findRule(path string) *Rule {
-	c.muRules.RLock()
-	defer c.muRules.RUnlock()
-	for _, rule := range c.Rules {
+	c.muRules.Lock()
+	rules := c.Rules
+	c.muRules.Unlock()
+	for _, rule := range rules {
 		if rule.Regexp.MatchString(path) {
 			return rule
 		}
