@@ -18,6 +18,8 @@ func makeAnalyzer() *analysis.Analyzer {
 		RequiredAlias: make(map[string]string),
 	}
 	return &analysis.Analyzer{
+		Name:  "importas",
+		Doc:   "something",
 		Flags: flags(&cnf),
 		Run: func(pass *analysis.Pass) (interface{}, error) {
 			return runWithConfig(&cnf, pass)
@@ -102,6 +104,14 @@ func TestAnalyzer(t *testing.T) {
 			aliases: stringMap{
 				"knative.dev/serving/pkg/(?:apis/)?(\\w+)(?:/v[\\w\\d]+)?": "k$1",
 			},
+		},
+		{
+			desc: "dot imports should be handled correctly",
+			pkg:  "h",
+			aliases: stringMap{
+				"github.com/onsi/gomega": ".",
+			},
+			disallowUnaliased: true,
 		},
 	}
 
