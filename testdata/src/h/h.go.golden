@@ -1,0 +1,11 @@
+package h
+
+import (
+	. "github.com/onsi/gomega" // want `import "github.com/onsi/gomega" imported without alias but must be with alias "." according to config`
+)
+
+func foo() {
+	Expect(nil).To(BeNil())
+
+	Expect(true).To(BeTrue())
+}
