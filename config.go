@@ -4,28 +4,25 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"sync"
 )
 
 type Config struct {
 	RequiredAlias        map[string]string
-	Rules                []*Rule
 	DisallowUnaliased    bool
 	DisallowExtraAliases bool
-	muRules              sync.Mutex
 }
 
-func (c *Config) CompileRegexp() error {
-	c.muRules.Lock()
-	defer c.muRules.Unlock()
-	if c.Rules != nil {
-		return nil
-	}
+type CompiledConfig struct {
+	Config
+	rules []*Rule
+}
+
+func (c Config) Compile() (*CompiledConfig, error) {
 	rules := make([]*Rule, 0, len(c.RequiredAlias))
 	for path, alias := range c.RequiredAlias {
 		reg, err := regexp.Compile(fmt.Sprintf("^%s$", path))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		rules = append(rules, &Rule{
@@ -33,24 +30,14 @@ func (c *Config) CompileRegexp() error {
 			Alias:  alias,
 		})
 	}
-	c.Rules = rules
-	return nil
+
+	return &CompiledConfig{
+		Config: c,
+		rules:  rules,
+	}, nil
 }
 
-func (c *Config) findRule(path string) *Rule {
-	c.muRules.Lock()
-	rules := c.Rules
-	c.muRules.Unlock()
-	for _, rule := range rules {
-		if rule.Regexp.MatchString(path) {
-			return rule
-		}
-	}
-
-	return nil
-}
-
-func (c *Config) AliasFor(path string) (string, bool) {
+func (c *CompiledConfig) AliasFor(path string) (string, bool) {
 	rule := c.findRule(path)
 	if rule == nil {
 		return "", false
@@ -62,6 +49,16 @@ func (c *Config) AliasFor(path string) (string, bool) {
 	}
 
 	return alias, true
+}
+
+func (c *CompiledConfig) findRule(path string) *Rule {
+	for _, rule := range c.rules {
+		if rule.Regexp.MatchString(path) {
+			return rule
+		}
+	}
+
+	return nil
 }
 
 type Rule struct {
