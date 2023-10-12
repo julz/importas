@@ -166,6 +166,15 @@ func TestAnalyzer(t *testing.T) {
 			},
 			disallowUnaliased: true,
 		},
+		{
+			desc: "disallow unaliased and disable extra alias together",
+			pkg:  "i",
+			aliases: stringMap{
+				"fmt": "fff",
+			},
+			disallowUnaliased:    true,
+			disallowExtraAliases: true,
+		},
 	}
 
 	for _, test := range testCases {

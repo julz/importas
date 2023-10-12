@@ -12,6 +12,8 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+const NilAlias = "<nil>"
+
 var config = &Config{
 	RequiredAlias: make(map[string]string),
 }
@@ -48,10 +50,7 @@ func visitImportSpecNode(config *Config, node *ast.ImportSpec, pass *analysis.Pa
 		return
 	}
 
-	alias := ""
-	if node.Name != nil {
-		alias = node.Name.String()
-	}
+	alias := node.Name.String()
 
 	if alias == "." {
 		return // Dot aliases are generally used in tests, so ignore.
@@ -68,7 +67,7 @@ func visitImportSpecNode(config *Config, node *ast.ImportSpec, pass *analysis.Pa
 
 	if required, exists := config.AliasFor(path); exists && required != alias {
 		message := fmt.Sprintf("import %q imported as %q but must be %q according to config", path, alias, required)
-		if alias == "" {
+		if alias == NilAlias {
 			message = fmt.Sprintf("import %q imported without alias but must be with alias %q according to config", path, required)
 		}
 
@@ -81,7 +80,7 @@ func visitImportSpecNode(config *Config, node *ast.ImportSpec, pass *analysis.Pa
 				TextEdits: findEdits(node, pass.TypesInfo.Uses, path, alias, required),
 			}},
 		})
-	} else if !exists && config.DisallowExtraAliases {
+	} else if !exists && alias != NilAlias && config.DisallowExtraAliases {
 		pass.Report(analysis.Diagnostic{
 			Pos:     node.Pos(),
 			End:     node.End(),
