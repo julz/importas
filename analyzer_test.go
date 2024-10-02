@@ -16,7 +16,7 @@ import (
 
 func makeAnalyzer() *analysis.Analyzer {
 	cnf := Config{
-		RequiredAlias: make(map[string]string),
+		RequiredAlias: make([][]string, 0),
 	}
 	return &analysis.Analyzer{
 		Name:  "importas",
@@ -43,9 +43,9 @@ func TestIncorrectFlags(t *testing.T) {
 }
 
 func TestConcurrency(t *testing.T) {
-	aliases := stringMap{
-		"fmt": "fff",
-		"os":  "stdos",
+	aliases := aliasList{
+		[]string{"fmt", "fff"},
+		[]string{"os", "stdos"},
 	}
 	testdata := analysistest.TestData()
 	dir := filepath.Join(testdata, "src", "b")
@@ -64,8 +64,8 @@ func TestConcurrency(t *testing.T) {
 	}
 	a := makeAnalyzer()
 	flg := a.Flags.Lookup("alias")
-	for k, v := range aliases {
-		err := flg.Value.Set(fmt.Sprintf("%s:%s", k, v))
+	for _, alias := range aliases {
+		err := flg.Value.Set(fmt.Sprintf("%s:%s", alias[0], alias[1]))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -100,49 +100,49 @@ func TestAnalyzer(t *testing.T) {
 	testCases := []struct {
 		desc                 string
 		pkg                  string
-		aliases              stringMap
+		aliases              aliasList
 		disallowUnaliased    bool
 		disallowExtraAliases bool
 	}{
 		{
 			desc: "Invalid imports",
 			pkg:  "a",
-			aliases: stringMap{
-				"fmt": "fff",
-				"os":  "stdos",
-				"io":  "iio",
+			aliases: aliasList{
+				[]string{"fmt", "fff"},
+				[]string{"os", "stdos"},
+				[]string{"io", "iio"},
 			},
 		},
 		{
 			desc: "Valid imports",
 			pkg:  "b",
-			aliases: stringMap{
-				"fmt": "fff",
-				"os":  "stdos",
+			aliases: aliasList{
+				[]string{"fmt", "fff"},
+				[]string{"os", "stdos"},
 			},
 		},
 		{
 			desc: "external libs",
 			pkg:  "c",
-			aliases: stringMap{
-				"knative.dev/serving/pkg/apis/autoscaling/v1alpha1": "autoscalingv1alpha1",
-				"knative.dev/serving/pkg/apis/serving/v1":           "servingv1",
+			aliases: aliasList{
+				[]string{"knative.dev/serving/pkg/apis/autoscaling/v1alpha1", "autoscalingv1alpha1"},
+				[]string{"knative.dev/serving/pkg/apis/serving/v1", "servingv1"},
 			},
 		},
 		{
 			desc: "regexp",
 			pkg:  "d",
-			aliases: stringMap{
-				"knative.dev/serving/pkg/apis/(\\w+)/(v[\\w\\d]+)": "$1$2",
+			aliases: aliasList{
+				[]string{"knative.dev/serving/pkg/apis/(\\w+)/(v[\\w\\d]+)", "$1$2"},
 			},
 		},
 		{
 			desc: "disallow unaliased mode",
 			pkg:  "e",
-			aliases: stringMap{
-				"fmt": "fff",
-				"os":  "stdos",
-				"io":  "iio",
+			aliases: aliasList{
+				[]string{"fmt", "fff"},
+				[]string{"os", "stdos"},
+				[]string{"io", "iio"},
 			},
 			disallowUnaliased: true,
 		},
@@ -154,17 +154,25 @@ func TestAnalyzer(t *testing.T) {
 		{
 			desc: "regexp with non capturing groups",
 			pkg:  "g",
-			aliases: stringMap{
-				"knative.dev/serving/pkg/(?:apis/)?(\\w+)(?:/v[\\w\\d]+)?": "k$1",
+			aliases: aliasList{
+				[]string{"knative.dev/serving/pkg/(?:apis/)?(\\w+)(?:/v[\\w\\d]+)?", "k$1"},
 			},
 		},
 		{
 			desc: "dot imports should be handled correctly",
 			pkg:  "h",
-			aliases: stringMap{
-				"github.com/onsi/gomega": ".",
+			aliases: aliasList{
+				[]string{"github.com/onsi/gomega", "."},
 			},
 			disallowUnaliased: true,
+		},
+		{
+			desc: "conflicting aliases",
+			pkg:  "i",
+			aliases: aliasList{
+				[]string{"knative.dev/serving/pkg/apis/serving/v1", "special"}, // this goes first
+				[]string{"knative.dev/serving/pkg/apis/(\\w+)/(v[\\w\\d]+)", "$1$2"},
+			},
 		},
 	}
 
@@ -189,8 +197,8 @@ func TestAnalyzer(t *testing.T) {
 			}
 			a := makeAnalyzer()
 			flg := a.Flags.Lookup("alias")
-			for k, v := range test.aliases {
-				err := flg.Value.Set(fmt.Sprintf("%s:%s", k, v))
+			for _, alias := range test.aliases {
+				err := flg.Value.Set(fmt.Sprintf("%s:%s", alias[0], alias[1]))
 				if err != nil {
 					t.Fatal(err)
 				}
