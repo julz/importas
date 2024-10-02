@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	RequiredAlias        map[string]string
+	RequiredAlias        aliasList
 	Rules                []*Rule
 	DisallowUnaliased    bool
 	DisallowExtraAliases bool
@@ -22,7 +22,8 @@ func (c *Config) CompileRegexp() error {
 		return nil
 	}
 	rules := make([]*Rule, 0, len(c.RequiredAlias))
-	for path, alias := range c.RequiredAlias {
+	for _, aliases := range c.RequiredAlias {
+		path, alias := aliases[0], aliases[1]
 		reg, err := regexp.Compile(fmt.Sprintf("^%s$", path))
 		if err != nil {
 			return err

@@ -13,7 +13,7 @@ import (
 )
 
 var config = &Config{
-	RequiredAlias: make(map[string]string),
+	RequiredAlias: make([][]string, 0),
 }
 
 var Analyzer = &analysis.Analyzer{
