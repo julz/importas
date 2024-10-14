@@ -31,19 +31,20 @@ func run(pass *analysis.Pass) (interface{}, error) {
 }
 
 func runWithConfig(config *Config, pass *analysis.Pass) (interface{}, error) {
-	if err := config.CompileRegexp(); err != nil {
+	c, err := config.Compile()
+	if err != nil {
 		return nil, err
 	}
 
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	inspect.Preorder([]ast.Node{(*ast.ImportSpec)(nil)}, func(n ast.Node) {
-		visitImportSpecNode(config, n.(*ast.ImportSpec), pass)
+		visitImportSpecNode(c, n.(*ast.ImportSpec), pass)
 	})
 
 	return nil, nil
 }
 
-func visitImportSpecNode(config *Config, node *ast.ImportSpec, pass *analysis.Pass) {
+func visitImportSpecNode(config *CompiledConfig, node *ast.ImportSpec, pass *analysis.Pass) {
 	if !config.DisallowUnaliased && node.Name == nil {
 		return
 	}
